@@ -32,3 +32,13 @@ CONFIG_BOSCH_BMA255=y  акселерометр
 CONFIG_ROHM_RPR0521=y  alsps
 CONFIG_BOSCH_BMM050=y  магнитометр
 CONFIG_BU52061NVX=y    ?
+
+
+git add .
+git status
+git commit -a
+
+В открывшемся редакторе, вверху пишем например - Initial Commit (или "С любовью из России"). Сохраняем - Ctrl+O -> Enter -> выход - Cntr+X.
+
+git remote add origin https://github.com/nik124seleznev/lgh522y.git
+git push -u origin master
