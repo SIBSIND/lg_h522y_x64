@@ -1117,12 +1117,31 @@ s32 gt1x_touch_event_handler(u8 * data, struct input_dev * dev, struct input_dev
 	key_value = touch_data[1 + 8 * touch_num];
 	/* check current event */
 	if ((touch_data[0] & 0x10) && key_value) {
-#if (GTP_HAVE_STYLUS_KEY || GTP_HAVE_TOUCH_KEY)
+#if (GTP_HAVE_STYLUS_KEY)
 		/* get current key states */
 		if (key_value & 0xF0) {
 			SET_BIT(cur_event, BIT_STYLUS_KEY);
 		} else if (key_value & 0x0F) {
 			SET_BIT(cur_event, BIT_TOUCH_KEY);
+		}
+#endif
+#if defined(CONFIG_MTK_LEGACY)
+#if (GTP_HAVE_TOUCH_KEY)
+		/* get current key states */
+		if (key_value & 0xF0) {
+			SET_BIT(cur_event, BIT_STYLUS_KEY);
+		} else if (key_value & 0x0F) {
+			SET_BIT(cur_event, BIT_TOUCH_KEY);
+		}
+#endif
+#else
+		if(tpd_dts_data.use_tpd_button){
+			/* get current key states */
+			if (key_value & 0xF0) {
+				SET_BIT(cur_event, BIT_STYLUS_KEY);
+			} else if (key_value & 0x0F) {
+				SET_BIT(cur_event, BIT_TOUCH_KEY);
+			}
 		}
 #endif
 	}
@@ -1169,7 +1188,7 @@ s32 gt1x_touch_event_handler(u8 * data, struct input_dev * dev, struct input_dev
 		gt1x_pen_up(0);
 	}
 #endif
-
+#if defined(CONFIG_MTK_LEGACY)
 #if GTP_HAVE_TOUCH_KEY
 	if (CHK_BIT(cur_event, BIT_TOUCH_KEY) || CHK_BIT(pre_event, BIT_TOUCH_KEY)) {
 		for (i = 0; i < GTP_MAX_KEY_NUM; i++) {
@@ -1179,6 +1198,20 @@ s32 gt1x_touch_event_handler(u8 * data, struct input_dev * dev, struct input_dev
 			GTP_DEBUG("Key Down.");
 		} else {
 			GTP_DEBUG("Key Up.");
+		}
+	}
+#endif
+#else
+	if(tpd_dts_data.use_tpd_button){
+		if (CHK_BIT(cur_event, BIT_TOUCH_KEY) || CHK_BIT(pre_event, BIT_TOUCH_KEY)) {
+			for (i = 0; i < tpd_dts_data.tpd_key_num; i++) {
+				input_report_key(dev, tpd_dts_data.tpd_key_local[i], key_value & (0x01 << i));
+			}
+			if (CHK_BIT(cur_event, BIT_TOUCH_KEY)) {
+				GTP_DEBUG("Key Down.");
+			} else {
+				GTP_DEBUG("Key Up.");
+			}
 		}
 	}
 #endif

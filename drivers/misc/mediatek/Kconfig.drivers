@@ -1249,6 +1249,10 @@ config C60802_SUPPORT
 	  Enables support for external PHY(Ver C).
 	  If unsure, say N.
 
+config JDI_INCELL
+         bool "JDI_INCELL for Mediatek package"
+        default n
+
 config MTK_S3320
          bool "S3320 for Mediatek package"
         default n

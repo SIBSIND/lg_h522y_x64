@@ -14,5 +14,5 @@ endif
 obj-y   +=  s3320_driver.o
 obj-y   +=  s3320_fw_update.o
 obj-y +=  RefCode_CustomerImplementation.o
-obj-y +=  RefCode_F54.o
+#obj-y +=  RefCode_F54.o
 

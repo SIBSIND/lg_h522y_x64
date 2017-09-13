@@ -31,6 +31,7 @@
 #endif
 
 #ifdef CONFIG_OF_TOUCH
+#include <linux/regulator/consumer.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #endif
@@ -92,13 +93,26 @@ static unsigned short force[] = { 0, GTP_I2C_ADDRESS, I2C_CLIENT_END, I2C_CLIENT
 static const unsigned short *const forces[] = { force, NULL };
 
 //static struct i2c_client_address_data addr_data = { .forces = forces,};
+#if defined(CONFIG_MTK_LEGACY)
 static struct i2c_board_info __initdata i2c_tpd = { I2C_BOARD_INFO(GTP_DRIVER_NAME, (GTP_I2C_ADDRESS >> 1)) };
-
+#endif
+#if !defined(CONFIG_MTK_LEGACY)
+static const struct of_device_id tpd_of_match[] = {
+		{.compatible = "mediatek,CAP_TOUCH"},
+		{},
+};
+#endif
 static struct i2c_driver tpd_i2c_driver = {
 	.probe = tpd_i2c_probe,
 	.remove = tpd_i2c_remove,
 	.detect = tpd_i2c_detect,
 	.driver.name = GTP_DRIVER_NAME,
+	.driver = {
+		.name = GTP_DRIVER_NAME,
+	#if !defined(CONFIG_MTK_LEGACY)
+		.of_match_table = tpd_of_match,
+	#endif
+	},
 	.id_table = tpd_i2c_id,
 	.address_list = (const unsigned short *)forces,
 };
@@ -392,9 +406,7 @@ void gt1x_irq_disable(void)
 
 void gt1x_power_switch(s32 state)
 {
-#ifdef CONFIG_ARCH_MT6580
 	int ret = 0;
-#endif
 
 	GTP_GPIO_OUTPUT(GTP_RST_PORT, 0);
 	GTP_GPIO_OUTPUT(GTP_INT_PORT, 0);
@@ -409,6 +421,11 @@ void gt1x_power_switch(s32 state)
 		mt_set_gpio_dir(GPIO_CTP_EN_PIN, GPIO_DIR_OUT);
 		mt_set_gpio_out(GPIO_CTP_EN_PIN, GPIO_OUT_ONE);
 #else // ( defined(MT6575) || defined(MT6577) || defined(MT6589) )
+#if !defined(CONFIG_MTK_LEGACY)
+		ret=regulator_enable(tpd->reg);  //enable regulator
+		if (ret)
+			GTP_ERROR("regulator_enable() failed!\n");
+#else
 #ifdef TPD_POWER_SOURCE_CUSTOM
 #ifdef CONFIG_ARCH_MT6580
 		ret=regulator_set_voltage(tpd->reg, 2800000, 2800000);  // set 2.8v
@@ -420,8 +437,10 @@ void gt1x_power_switch(s32 state)
 #else
 		hwPowerOn(TPD_POWER_SOURCE_CUSTOM, VOL_2800, "TP");
 #endif
+
 #else
 		hwPowerOn(MT65XX_POWER_LDO_VGP2, VOL_2800, "TP");
+#endif
 #endif
 #ifdef TPD_POWER_SOURCE_1800
 		hwPowerOn(TPD_POWER_SOURCE_1800, VOL_1800, "TP");
@@ -443,6 +462,11 @@ void gt1x_power_switch(s32 state)
 #ifdef TPD_POWER_SOURCE_1800
 		hwPowerDown(TPD_POWER_SOURCE_1800, "TP");
 #endif
+#if !defined(CONFIG_MTK_LEGACY)
+		ret=regulator_disable(tpd->reg); //disable regulator
+		if (ret)
+			GTP_ERROR("regulator_disable() failed!\n");
+#else
 #ifdef TPD_POWER_SOURCE_CUSTOM
 #ifdef CONFIG_ARCH_MT6580
 		ret=regulator_disable(tpd->reg); //disable regulator
@@ -453,6 +477,7 @@ void gt1x_power_switch(s32 state)
 #endif
 #else
 		hwPowerDown(MT65XX_POWER_LDO_VGP2, "TP");
+#endif
 #endif
 #endif
 		power_flag=0;
@@ -510,10 +535,7 @@ static int tpd_irq_registration(void)
 static int tpd_registration(struct i2c_client *client)
 {
 	s32 err = 0;
-
-#if GTP_HAVE_TOUCH_KEY
 	s32 idx = 0;
-#endif
 
 	gt1x_i2c_client = client;
 
@@ -528,9 +550,17 @@ static int tpd_registration(struct i2c_client *client)
 		err = PTR_ERR(thread);
 		GTP_INFO(TPD_DEVICE " failed to create kernel thread: %d\n", err);
 	}
+#if defined(CONFIG_MTK_LEGACY)
 #if GTP_HAVE_TOUCH_KEY
 	for (idx = 0; idx < GTP_MAX_KEY_NUM; idx++) {
 		input_set_capability(tpd->dev, EV_KEY, gt1x_touch_key_array[idx]);
+	}
+#endif
+#else
+	if(tpd_dts_data.use_tpd_button){
+		for (idx = 0; idx < tpd_dts_data.tpd_key_num; idx++) {
+			input_set_capability(tpd->dev, EV_KEY, tpd_dts_data.tpd_key_local[idx]);
+		}
 	}
 #endif
 
@@ -600,7 +630,7 @@ static s32 tpd_i2c_probe(struct i2c_client *client, const struct i2c_device_id *
     if (RECOVERY_BOOT == get_boot_mode())
         return 0;
     
-	probe_thread =kthread_run(tpd_registration, client, "tpd_probe");
+	probe_thread =kthread_run(tpd_registration, (void*)client, "tpd_probe");
 	if (IS_ERR(probe_thread))
 	{
 		err = PTR_ERR(probe_thread);
@@ -613,7 +643,7 @@ static s32 tpd_i2c_probe(struct i2c_client *client, const struct i2c_device_id *
 		count++;
 		if(check_flag==TRUE)
 			break;
-	}while(count < 50);
+	}while(count < 300);
 	GTP_INFO("tpd_i2c_probe done.count = %d, flag = %d",count,tpd_load_status);
 	return 0;
 }
@@ -692,9 +722,17 @@ int lcm_x = 0, lcm_y = 0;
 	tpd_history_x=x;
 	tpd_history_y=y;
 
-#ifdef TPD_HAVE_BUTTON
+#if defined(CONFIG_MTK_LEGACY)
+#if TPD_HAVE_BUTTON
 	if (FACTORY_BOOT == get_boot_mode() || RECOVERY_BOOT == get_boot_mode()) {
 		tpd_button(x, y, 1);
+	}
+#endif
+#else
+	if(tpd_dts_data.use_tpd_button){
+		if (FACTORY_BOOT == get_boot_mode() || RECOVERY_BOOT == get_boot_mode()) {
+			tpd_button(x, y, 1);
+		}
 	}
 #endif
 }
@@ -712,9 +750,17 @@ void gt1x_touch_up(s32 id)
     TPD_EM_PRINT(tpd_history_x, tpd_history_y, tpd_history_x, tpd_history_y, id, 0);    
     tpd_history_x=0;
     tpd_history_y=0;
-#ifdef TPD_HAVE_BUTTON
+#if defined(CONFIG_MTK_LEGACY)
+#if TPD_HAVE_BUTTON
 	if (FACTORY_BOOT == get_boot_mode() || RECOVERY_BOOT == get_boot_mode()) {
 		tpd_button(0, 0, 0);
+	}
+#endif
+#else
+	if(tpd_dts_data.use_tpd_button){
+		if (FACTORY_BOOT == get_boot_mode() || RECOVERY_BOOT == get_boot_mode()) {
+			tpd_button(0, 0, 0);
+		}
 	}
 #endif
 }
@@ -908,7 +954,44 @@ static int tpd_i2c_remove(struct i2c_client *client)
 
 static int tpd_local_init(void)
 {
-
+#if !defined CONFIG_MTK_LEGACY
+	int ret;
+	char *cust_tpd_name = NULL;
+	struct device_node *node = NULL, *tpd_node;
+	GTP_INFO("Device Tree get regulator!");
+	/* check if cust defined */
+	node = of_find_compatible_node(NULL, NULL, "mediatek,regulator_supply");
+	if(node){
+		cust_tpd_name = of_get_property(node, "CAP_TOUCH_VDD", NULL);
+		if (cust_tpd_name == NULL){
+			/* no customer setting, use default touch regulator */
+			tpd->reg=regulator_get(tpd->tpd_dev,"VTOUCH");
+			ret=regulator_set_voltage(tpd->reg, 2800000, 2800000);	// set 2.8v
+			if (ret){
+				GTP_ERROR("regulator_set_voltage(%d) failed!\n", ret);
+				return -1;
+			}
+		}else{
+			/* customer setting existed */
+			GTP_INFO("Using Cust-LDO. Touch regulator name =%s!\n", cust_tpd_name);
+			/* backup tpd node */
+			tpd_node = tpd->tpd_dev->of_node;
+			/* get customer regulator supply node */
+			tpd->tpd_dev->of_node = node;
+			tpd->reg=regulator_get(tpd->tpd_dev,"CAP_TOUCH_VDD");
+			ret=regulator_set_voltage(tpd->reg, 2800000, 2800000);	// set 2.8v
+			if (ret){
+				GTP_ERROR("regulator_set_voltage() failed!\n");
+			return -1;
+		}
+			/* restore tpd node */
+			tpd->tpd_dev->of_node = tpd_node;
+		}
+	}else{
+		GTP_ERROR("regulator get touch node failed!\n");
+		return -1;
+	}
+#endif
 #ifdef TPD_POWER_SOURCE_CUSTOM
 #ifdef CONFIG_OF_TOUCH
 #ifdef CONFIG_ARCH_MT6580
@@ -942,10 +1025,15 @@ static int tpd_local_init(void)
 		return -1;
 	}
 	input_set_abs_params(tpd->dev, ABS_MT_TRACKING_ID, 0, (GTP_MAX_TOUCH - 1), 0, 0);
+#if defined(CONFIG_MTK_LEGACY)
 #if TPD_HAVE_BUTTON
 	tpd_button_setting(TPD_KEY_COUNT, tpd_keys_local, tpd_keys_dim_local);	// initialize tpd button data
 #endif
-
+#else
+	if(tpd_dts_data.use_tpd_button){
+	tpd_button_setting(tpd_dts_data.tpd_key_num, tpd_dts_data.tpd_key_local, tpd_dts_data.tpd_key_dim_local);	// initialize tpd button data
+	}
+#endif
 #if (defined(TPD_WARP_START) && defined(TPD_WARP_END))
 	TPD_DO_WARP = 1;
 	memcpy(tpd_wb_start, tpd_wb_start_local, TPD_WARP_CNT * 4);
@@ -1087,10 +1175,12 @@ static struct tpd_driver_t tpd_device_driver = {
 	.tpd_local_init = tpd_local_init,
 	.suspend = tpd_suspend,
 	.resume = tpd_resume,
-#ifdef TPD_HAVE_BUTTON
+#if defined(CONFIG_MTK_LEGACY)
+#if TPD_HAVE_BUTTON
 	.tpd_have_button = 1,
 #else
 	.tpd_have_button = 0,
+#endif
 #endif
 };
 
@@ -1128,9 +1218,11 @@ void tpd_on(void)
 static int __init tpd_driver_init(void)
 {
 	GTP_INFO("Goodix touch panel driver init.");
-
+#if !defined(CONFIG_MTK_LEGACY)
+	tpd_get_dts_info();
+#else
 	i2c_register_board_info(TPD_I2C_NUMBER, &i2c_tpd, 1);
-
+#endif
 	if (tpd_driver_add(&tpd_device_driver) < 0) {
 		GTP_INFO("add generic driver failed\n");
 	}

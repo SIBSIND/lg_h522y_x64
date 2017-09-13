@@ -16,8 +16,10 @@ make dep
 make clean
 make mrproper
 make O=out TARGET_ARCH=arm vz6752_65c_a_l1_defconfig
-make -j4 O=out TARGET_ARCH=arm64 | tee build.log
+make -j8 O=out TARGET_ARCH=arm64 | tee build.log
 
+
+make -j4 O=out TARGET_ARCH=arm64 | tee build.log
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 make -j1 O=out TARGET_ARCH=arm64 | tee build.log

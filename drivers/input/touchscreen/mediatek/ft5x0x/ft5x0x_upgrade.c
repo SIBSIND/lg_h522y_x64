@@ -1,3 +1,38 @@
+/* Copyright Statement:
+ *
+ * This software/firmware and related documentation ("MediaTek Software") are
+ * protected under relevant copyright laws. The information contained herein
+ * is confidential and proprietary to MediaTek Inc. and/or its licensors.
+ * Without the prior written permission of MediaTek inc. and/or its licensors,
+ * any reproduction, modification, use or disclosure of MediaTek Software,
+ * and information contained herein, in whole or in part, shall be strictly prohibited.
+ */
+/* MediaTek Inc. (C) 2010. All rights reserved.
+ *
+ * BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+ * THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+ * RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER ON
+ * AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+ * NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+ * SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+ * SUPPLIED WITH THE MEDIATEK SOFTWARE, AND RECEIVER AGREES TO LOOK ONLY TO SUCH
+ * THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. RECEIVER EXPRESSLY ACKNOWLEDGES
+ * THAT IT IS RECEIVER'S SOLE RESPONSIBILITY TO OBTAIN FROM ANY THIRD PARTY ALL PROPER LICENSES
+ * CONTAINED IN MEDIATEK SOFTWARE. MEDIATEK SHALL ALSO NOT BE RESPONSIBLE FOR ANY MEDIATEK
+ * SOFTWARE RELEASES MADE TO RECEIVER'S SPECIFICATION OR TO CONFORM TO A PARTICULAR
+ * STANDARD OR OPEN FORUM. RECEIVER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND
+ * CUMULATIVE LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+ * AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+ * OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY RECEIVER TO
+ * MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+ *
+ * The following software/firmware and/or related documentation ("MediaTek Software")
+ * have been modified by MediaTek Inc. All revisions are subject to any receiver's
+ * applicable license agreements with MediaTek Inc.
+ */
+
 #include "tpd.h"
 #include <linux/i2c.h>
 #include <linux/wait.h>
@@ -236,15 +271,15 @@ static int tpd_dma_read(struct i2c_client *client, TPD_BYTE *pbt_buf, TPD_BYTE b
 
 	if (!client || !tpd_i2c_dma_va )
 	{
-		//printk("%s, i2c_client or icn83xx_i2c_dma_va is null pointer\n");
-		printk("i2c_client or icn83xx_i2c_dma_va is null pointer\n");
+		/*pr_err("%s, i2c_client or icn83xx_i2c_dma_va is null pointer\n");*/
+		pr_err("i2c_client or icn83xx_i2c_dma_va is null pointer\n");
 		return -1;
 	}
 
 		msgs[0].addr =client->addr | I2C_DMA_FLAG;
 		msgs[0].flags = 0;
 		msgs[0].len = 2;
-		msgs[0].buf = tpd_i2c_dma_pa;		
+		msgs[0].buf = tpd_i2c_dma_pa;
 //		msgs[0].ext_flag = 0;
 //		msgs[0].timing = 400;
 
@@ -269,7 +304,7 @@ static int tpd_dma_read(struct i2c_client *client, TPD_BYTE *pbt_buf, TPD_BYTE b
 
 		if(retries >= 3)
 		{
-			printk("%s i2c read error: %d, rxdata_len = %d\n", __func__, ret, bt_len);
+			pr_err("%s i2c read error: %d, rxdata_len = %d\n", __func__, ret, bt_len);
 		}
 		else
 		{
@@ -314,7 +349,7 @@ int ft5x0x_i2c_Read(struct i2c_client *client, char *writebuf,
 		};
 		ret = i2c_transfer(client->adapter, msgs, 2);
 		if (ret < 0)
-			printk("f%s: i2c read error.\n",
+			pr_err("f%s: i2c read error.\n",
 				__func__);
 	} else {
 		struct i2c_msg msgs[] = {
@@ -327,7 +362,7 @@ int ft5x0x_i2c_Read(struct i2c_client *client, char *writebuf,
 		};
 		ret = i2c_transfer(client->adapter, msgs, 1);
 		if (ret < 0)
-			printk("%s:i2c read error.\n", __func__);
+			pr_err("%s:i2c read error.\n", __func__);
 	}
 	return ret;
 }
@@ -347,7 +382,7 @@ int ft5x0x_i2c_Write(struct i2c_client *client, char *writebuf, int writelen)
 
 	ret = i2c_transfer(client->adapter, msg, 1);
 	if (ret < 0)
-		printk("%s i2c write error.\n", __func__);
+		pr_err("%s i2c write error.\n", __func__);
 
 	return ret;
 }
@@ -417,7 +452,7 @@ static UPGRADE_ERR_TYPE tpd_fw_upgrade(struct i2c_client *client, unsigned char 
 	ret=ft5x0x_write_reg(client, 0xfc, 0xaa);
 	if(ret<0)
 	{
-		printk("liuhuan---write 0xaa to 0xfc---\n");
+		pr_err("liuhuan---write 0xaa to 0xfc---\n");
 		return -1;
 			}
 	//msleep(50);//ok
@@ -427,7 +462,7 @@ static UPGRADE_ERR_TYPE tpd_fw_upgrade(struct i2c_client *client, unsigned char 
 	ft5x0x_write_reg(client, 0xfc, 0x55);
 	if(ret<0)
 	{
-		printk("liuhuan---write 0x55 to 0xfc---\n");
+		pr_err("liuhuan---write 0x55 to 0xfc---\n");
 		return -1;
 			}
 	//msleep(30);//ok  */
@@ -521,7 +556,7 @@ while(reg_val[0] != 0x79 || reg_val[1] != 0x11);
 		TPD_DMESG("[TPD] dma end.\n");
 		if(ret < 0)
 			{
-				printk("liuhuan----tpd dma write---err\n");
+				pr_err("liuhuan----tpd dma write---err\n");
 				return ret;	
 					}
 		//tpd_byte_write(client, &packet_buf[0], TPD_PACKET_LENGTH + 6);
@@ -559,7 +594,7 @@ while(reg_val[0] != 0x79 || reg_val[1] != 0x11);
 		ret=tpd_dma_write(client, &packet_buf[0], temp + 6);
 		if(ret < 0)
 			{
-				printk("liuhuan----tpd dma write---err1\n");
+				pr_err("liuhuan----tpd dma write---err1\n");
 				return ret;	
 					}
 		//tpd_byte_write(client, &packet_buf[0], temp + 6);
@@ -598,11 +633,11 @@ while(reg_val[0] != 0x79 || reg_val[1] != 0x11);
 //	tpd_cmd_write(client, 0xCC, 0x00, 0x00, 0x00, 1);
 	auc_i2c_write_buf[0]=0xcc;
 	ft5x0x_i2c_Read(client, auc_i2c_write_buf, 1, &val, 1);
-	if(val != bt_ecc)
+	if (val != bt_ecc)
 	{
-		printk("liuhuan------checksum---val:0x%x --- bt_ecc:0x%x \n",val,bt_ecc);
+		pr_err("liuhuan------checksum---val:0x%x --- bt_ecc:0x%x\n", val, bt_ecc);
 		return -1;
-			}
+	}
 //	msleep(300); //make sure CTP startup normally
 	//msleep(50); //make sure CTP startup normally //liuhuan
 

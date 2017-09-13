@@ -1,7 +1,23 @@
 #include "tpd.h"
 
+#if defined (TARGET_MT6582_Y70)
+int TPD_RES_X = 720;
+int TPD_RES_Y = 1280;
+#elif defined (TARGET_MT6582_Y90)
+int TPD_RES_X = 959;
+int TPD_RES_Y = 1707;
+#elif defined (TARGET_MT6732_C90)
+int TPD_RES_X = 959;
+int TPD_RES_Y = 1707;
+#elif defined (TARGET_MT6592M_P1S3G)
+int TPD_RES_X = 720;
+int TPD_RES_Y = 1280;
+#else
+//int TPD_RES_X = 480;
+//int TPD_RES_Y = 800;
 int TPD_RES_X = 480;
-int TPD_RES_Y = 800;
+int TPD_RES_Y = 850;
+#endif
 
 /* #if (defined(TPD_HAVE_CALIBRATION) && !defined(TPD_CUSTOM_CALIBRATION)) */
 int tpd_calmat[8] = { 0 };

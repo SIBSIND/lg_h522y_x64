@@ -2062,7 +2062,7 @@ static int tpd_irq_registration(void)
 		GTP_ERROR("tpd request_irq can not find touch eint device node!.");
 		ret = -1;
 	}
-	GTP_INFO("[%s]irq:%d, debounce:%d-%d:", __FUNCTION__, touch_irq, ints[0], ints[1]);
+	GTP_INFO("[%s]irq:%d, debounce:%d-%d:", __func__, touch_irq, ints[0], ints[1]);
 	return ret;
 }
 #endif
@@ -2070,7 +2070,7 @@ static int tpd_irq_registration(void)
 static int tpd_registration(struct i2c_client *client)
 {
 		s32 err = 0;
-		s32 ret = 0;		
+		s32 ret = 0;
 		u16 version_info;
 #if GTP_HAVE_TOUCH_KEY
 		s32 idx = 0;
@@ -2080,43 +2080,43 @@ static int tpd_registration(struct i2c_client *client)
 #endif
 
 	    GTP_INFO("tpd registration start.");
-    
+
 		i2c_client_point = client;
 		ret = tpd_power_on(client);
-	
+
 		if (ret < 0)
 		{
 			GTP_ERROR("I2C communication ERROR!");
 		}
-		
+
 	//#ifdef VELOCITY_CUSTOM
  #if 0
-	
+
 		if ((err = misc_register(&tpd_misc_device)))
 		{
-			printk("mtk_tpd: tpd_misc_device register failed\n");
+			pr_warn("mtk_tpd: tpd_misc_device register failed\n");
 		}
-	
+
 #endif
 #ifdef VELOCITY_CUSTOM
 		tpd_v_magnify_x = TPD_VELOCITY_CUSTOM_X;
 		tpd_v_magnify_y = TPD_VELOCITY_CUSTOM_Y;
-	
+
 #endif
 #if TOUCH_FILTER
 		memcpy(&tpd_filter, &tpd_filter_local, sizeof(struct tpd_filter_t));
-		
+
 #endif
-	
+
 		ret = gtp_read_version(client, &version_info);
-	
+
 		if (ret < 0)
 		{
 			GTP_ERROR("Read version failed.");
-		}	 
-		
+		}
+
 		ret = gtp_init_panel(client);
-	
+
 		if (ret < 0)
 		{
 			GTP_ERROR("GTP init panel failed.");
@@ -2539,7 +2539,7 @@ static void tpd_down(s32 x, s32 y, s32 size, s32 id)
 {
 #if GTP_CHARGER_SWITCH
 	if(is_charger_cfg_updating){
-		printk("tpd_down ignored when CFG changing\n");
+		pr_warn("tpd_down ignored when CFG changing\n");
 		return;
 	}
 #endif
@@ -2580,7 +2580,7 @@ static void tpd_up(s32 x, s32 y, s32 id)
 {
 #if GTP_CHARGER_SWITCH
 	if(is_charger_cfg_updating){
-		printk("tpd_up change is_charger_cfg_updating status\n");
+		pr_warn("tpd_up change is_charger_cfg_updating status\n");
 		is_charger_cfg_updating = false;
 		return;
 	}
@@ -2590,7 +2590,7 @@ static void tpd_up(s32 x, s32 y, s32 id)
     //input_report_abs(tpd->dev, ABS_MT_TOUCH_MAJOR, 0);
     input_mt_sync(tpd->dev);
     TPD_DEBUG_SET_TIME;
-    TPD_EM_PRINT(tpd_history_x, tpd_history_y, tpd_history_x, tpd_history_y, id, 0);    
+	TPD_EM_PRINT(tpd_history_x, tpd_history_y, tpd_history_x, tpd_history_y, id, 0);
     tpd_history_x=0;
     tpd_history_y=0;
     //MMProfileLogEx(MMP_TouchPanelEvent, MMProfileFlagPulse, 0, x+y);
@@ -2740,8 +2740,8 @@ static int touch_event_handler(void *unused)
 	      else
 	      {
 		      msleep(tpd_polling_time);
-	      }    	
-        
+			}
+
         set_current_state(TASK_RUNNING);
     	mutex_lock(&i2c_access);
 
@@ -2751,11 +2751,9 @@ static int touch_event_handler(void *unused)
 
 #if 0//G_DEBUG
     ret = gtp_i2c_read(i2c_client_point, g_buffer, 3);
-    printk("mtk-tpd:0x3014:value %x\n", g_buffer[2]);
-    if(ret>0 &&(g_buffer[2] == 0x1d))//0x001d: 1640hz;0x004b:4292hz 
-    {
-        printk("low report rate:0x3014:value %x\n", g_buffer[2]);
-    }
+	pr_warn("mtk-tpd:0x3014:value %x\n", g_buffer[2]);
+	if (ret > 0 && (g_buffer[2] == 0x1d))/* 0x001d: 1640hz;0x004b:4292hz */
+		pr_warn("low report rate:0x3014:value %x\n", g_buffer[2]);
 
 #endif
     #if GTP_SLIDE_WAKEUP
@@ -2763,11 +2761,9 @@ static int touch_event_handler(void *unused)
         {
             ret = gtp_i2c_read(i2c_client_point, doze_buf, 3);
             GTP_DEBUG("0x814B = 0x%02X", doze_buf[2]);
-            if (ret > 0)
-            {               
-                if (0xAA == doze_buf[2])
-                {
-                    GTP_INFO("Forward slide to light up the screen!");
+			if (ret > 0) {
+				if (0xAA == doze_buf[2]) {
+					GTP_INFO("Forward slide to light up the screen!");
                     doze_status = DOZE_WAKEUP;
                     input_report_key(tpd->dev, KEY_POWER, 1);
                     input_sync(tpd->dev);
@@ -3211,7 +3207,7 @@ static int tpd_local_init(void)
     tpd->dev->id.product = tpd_info.pid;
     tpd->dev->id.version = tpd_info.vid;
 
-    GTP_INFO("end %s, %d\n", __FUNCTION__, __LINE__);
+	GTP_INFO("end %s, %d\n", __func__, __LINE__);
     tpd_type_cap = 1;
 
     return 0;
@@ -3592,7 +3588,7 @@ static void tpd_resume(struct early_suspend *h)
 {
     s32 ret = -1;
 
-    printk("mtk-tpd: %s start\n", __FUNCTION__);
+	pr_warn("mtk-tpd: %s start\n", __func__);
 #ifdef TPD_PROXIMITY
 
     if (tpd_proximity_flag == 1)
@@ -3657,7 +3653,7 @@ static void tpd_resume(struct early_suspend *h)
 #ifdef GTP_CHARGER_DETECT
     queue_delayed_work(gtp_charger_check_workqueue, &gtp_charger_check_work, clk_tick_cnt);
 #endif
-    printk("mtk-tpd: %s end\n", __FUNCTION__);
+	pr_warn("mtk-tpd: %s end\n", __func__);
 }
 
 static struct tpd_driver_t tpd_device_driver =

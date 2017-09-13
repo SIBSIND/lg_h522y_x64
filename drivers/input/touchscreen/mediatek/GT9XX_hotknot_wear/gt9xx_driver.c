@@ -37,7 +37,6 @@ static int tpd_polling_time=50;
 extern u8 load_fw_process;
 static struct work_struct vibrator_work;
 #if GTP_PALM_DETECTION
-static int palm_event_flag = 0;
 static void tpd_vibrator_work(struct work_struct *work);
 #endif
 
@@ -2090,7 +2089,7 @@ static int tpd_registration(struct i2c_client *client)
 
         if ((err = misc_register(&tpd_misc_device)))
         {
-            printk("mtk_tpd: tpd_misc_device register failed\n");
+			pr_warn("mtk_tpd: tpd_misc_device register failed\n");
         }
 
 #endif
@@ -2535,7 +2534,7 @@ static void tpd_down(s32 x, s32 y, s32 size, s32 id)
 {
 #if GTP_CHARGER_SWITCH
     if(is_charger_cfg_updating){
-        printk("tpd_down ignored when CFG changing\n");
+		pr_warn("tpd_down ignored when CFG changing\n");
         return;
     }
 #endif
@@ -2576,7 +2575,7 @@ static void tpd_up(s32 x, s32 y, s32 id)
 {
 #if GTP_CHARGER_SWITCH
     if(is_charger_cfg_updating){
-        printk("tpd_up change is_charger_cfg_updating status\n");
+		pr_warn("tpd_up change is_charger_cfg_updating status\n");
         is_charger_cfg_updating = false;
         return;
     }
@@ -2766,10 +2765,10 @@ static int touch_event_handler(void *unused)
 
 #if 0//G_DEBUG
     ret = gtp_i2c_read(i2c_client_point, g_buffer, 3);
-    printk("mtk-tpd:0x3014:value %x\n", g_buffer[2]);
+	pr_warn("mtk-tpd:0x3014:value %x\n", g_buffer[2]);
     if(ret>0 &&(g_buffer[2] == 0x1d))//0x001d: 1640hz;0x004b:4292hz
     {
-        printk("low report rate:0x3014:value %x\n", g_buffer[2]);
+		pr_warn("low report rate:0x3014:value %x\n", g_buffer[2]);
     }
 
 #endif
@@ -2866,23 +2865,21 @@ static int touch_event_handler(void *unused)
             ret = gtp_i2c_read(i2c_client_point, palm_buf, 3);
             GTP_DEBUG("PALM:0x814B = 0x%02X", palm_buf[2]);
 
-            if(palm_buf[2] & (0x1 <<5) && (palm_event_flag == 0))
+            if(palm_buf[2] & (0x1 <<5))
             {
-                    palm_event_flag = 1;
-                    GTP_INFO("PALM detection trigger");
-                    input_report_key(tpd->dev, KEY_SLEEP, 1);
-                    input_sync(tpd->dev);
-                    tpd_vibrator_work(NULL);
-                    input_report_key(tpd->dev, KEY_SLEEP, 0);
-                    input_sync(tpd->dev);
+                GTP_INFO("PALM detection trigger");
+                input_report_key(tpd->dev, KEY_SLEEP, 1);
+                input_sync(tpd->dev);
+                tpd_vibrator_work(NULL);
+                input_report_key(tpd->dev, KEY_SLEEP, 0);
+                input_sync(tpd->dev);
 
                 goto exit_work_func;
             }
         }
-        else if (pre_touch == 2 && palm_event_flag)
+        else if (pre_touch == 2)
              goto exit_work_func;
-        else
-            palm_event_flag = 0;
+;
     #endif
         ret = gtp_i2c_read(i2c_client_point, point_data, 12);
         if (ret < 0)
@@ -3279,7 +3276,7 @@ static int tpd_local_init(void)
     tpd->dev->id.product = tpd_info.pid;
     tpd->dev->id.version = tpd_info.vid;
 
-    GTP_INFO("end %s, %d\n", __FUNCTION__, __LINE__);
+	GTP_INFO("end %s, %d\n", __func__, __LINE__);
     tpd_type_cap = 1;
 
     return 0;
@@ -3597,7 +3594,7 @@ static void tpd_suspend(struct early_suspend *h)
     s32 ret = -1;
     u8 buf[3] = {0x81, 0xaa, 0};
 
-    GTP_INFO("mtk-tpd: %s start\n", __FUNCTION__);
+	GTP_INFO("mtk-tpd: %s start\n", __func__);
 
 #ifdef TPD_PROXIMITY
     if (tpd_proximity_flag == 1)
@@ -3643,11 +3640,6 @@ static void tpd_suspend(struct early_suspend *h)
 #if (GTP_SLIDE_WAKEUP | GTP_ONE_TOUCH_WAKEUP)
 
     if (tpd_doze_enable) {
-        #if GTP_PALM_DETECTION
-        if (palm_event_flag) {
-            palm_event_flag = 0;
-        }
-        #endif
         gtp_enter_doze(i2c_client_point);
         mt_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);
     }    
@@ -3684,7 +3676,7 @@ static void tpd_resume(struct early_suspend *h)
 {
     s32 ret = -1;
 
-    printk("mtk-tpd: %s start\n", __FUNCTION__);
+	pr_warn("mtk-tpd: %s start\n", __func__);
 #ifdef TPD_PROXIMITY
 
     if (tpd_proximity_flag == 1)
@@ -3752,7 +3744,7 @@ static void tpd_resume(struct early_suspend *h)
     queue_delayed_work(gtp_charger_check_workqueue, &gtp_charger_check_work, clk_tick_cnt);
 #endif
     tpd_halt = 0;
-    printk("mtk-tpd: %s end\n", __FUNCTION__);
+	pr_warn("mtk-tpd: %s end\n", __func__);
 }
 
 static struct tpd_driver_t tpd_device_driver =
