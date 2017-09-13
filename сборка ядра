@@ -1,0 +1,32 @@
+export ARCH=arm64
+export SUBARCH=arm64
+export CROSS_COMPILE=/home/nik-kst/Android/utility/aarch64-linux-android-4.8/bin/aarch64-linux-android-
+make dep
+make clean
+make mrproper
+make O=out TARGET_ARCH=arm vz6752_65c_a_l1_defconfig
+make -j4 O=out TARGET_ARCH=arm64 | tee build.log
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export ARCH=arm64
+export SUBARCH=arm64
+export CROSS_COMPILE=/home/nik-kst/Android/utility/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+make dep
+make clean
+make mrproper
+make O=out TARGET_ARCH=arm vz6752_65c_a_l1_defconfig
+make -j4 O=out TARGET_ARCH=arm64 | tee build.log
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+make -j1 O=out TARGET_ARCH=arm64 | tee build.log
+
+grep -iRI "ЧтоИскать" ГдеИскать
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CONFIG_BOSCH_BMA255=y  акселерометр
+CONFIG_ROHM_RPR0521=y  alsps
+CONFIG_BOSCH_BMM050=y  магнитометр
+CONFIG_BU52061NVX=y    ?
