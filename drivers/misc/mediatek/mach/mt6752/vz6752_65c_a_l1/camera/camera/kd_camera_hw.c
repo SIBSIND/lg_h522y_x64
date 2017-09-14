@@ -105,57 +105,6 @@ PowerCust PowerCustList={
 
 PowerUp PowerOnList={
     {
-        {SENSOR_DRVNAME_S5K5E2YA_MIPI_RAW,
-            {
-                {SensorMCLK,Vol_High, 0},
-                {DOVDD, Vol_1800, 0},
-                {AVDD,  Vol_2800, 0},
-                {DVDD,  Vol_1200, 0},
-                {AFVDD, Vol_2800, 5},
-                {PDN,   Vol_Low,  4},
-                {PDN,   Vol_High, 0},
-                {RST,   Vol_Low,  1},
-                {RST,   Vol_High, 0},
-            },
-        },
-        {SENSOR_DRVNAME_S5K2P8_MIPI_RAW,
-            {
-                {SensorMCLK,Vol_High, 0},
-                {DOVDD, Vol_1800, 0},
-                {AVDD,  Vol_2800, 0},
-                {DVDD,  Vol_1200, 0},
-                {AFVDD, Vol_2800, 5},
-                {PDN,   Vol_Low,  4},
-                {PDN,   Vol_High, 0},
-                {RST,   Vol_Low,  1},
-                {RST,   Vol_High, 0},
-            },
-        },
-        {SENSOR_DRVNAME_OV5648_MIPI_RAW,
-            {
-                {SensorMCLK,Vol_High, 0},
-                {DOVDD, Vol_1800, 1},
-                {AVDD,  Vol_2800, 1},
-                {DVDD,  Vol_1500, 1},
-                {AFVDD, Vol_2800, 5},
-                {PDN,   Vol_Low,  1},
-                {RST,   Vol_Low,  1},
-                {PDN,   Vol_High, 0},
-                {RST,   Vol_High, 0}
-            },
-        },
-//                                                         
-        {SENSOR_DRVNAME_IMX132_MIPI_RAW,
-            {
-                {SensorMCLK,Vol_High, 0},
-                {RST,    Vol_Low, 1},
-                {AVDD,    Vol_2800, 10},
-                {DVDD, Vol_1220, 10},
-                {DOVDD,    Vol_1800, 10},
-                {RST,    Vol_High, 0}
-            },
-        },
-    //                                                                         
         {SENSOR_DRVNAME_HI841_MIPI_RAW,
             {
                 {RST,   Vol_Low,  2},
@@ -167,9 +116,7 @@ PowerUp PowerOnList={
                 {RST,   Vol_High, 50},
             },
         },
-    //                                                                         
-//                                                         
-//                                                                          
+
         {SENSOR_DRVNAME_OV5670_MIPI_RAW,
             {
                 {SensorMCLK,Vol_High, 0},
@@ -180,8 +127,7 @@ PowerUp PowerOnList={
                 {RST,	Vol_High, 50},
             },
         },
-//                                                                          
-        //                               
+
         {NULL,},
     }
 };
